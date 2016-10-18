@@ -56,8 +56,8 @@ windower.register_event('prerender', function()
 			local col = '\\cs(0,255,0)'
 			if (strats == 0) then
 				col = '\\cs(255,0,0)'
-			elseif (strats <= 3) and player.main_job == 'SCH' then
-				col = '\\cs(255,125,125)'
+			elseif (strats <= 2) and player.main_job == 'SCH' then
+				col = '\\cs(255,100,0)'
 			end
 			time_box:text('SCH: '..schbuff..'\n*Remaining:  '..col..strats..' charges\\cr\n*Recast:     '..recast_timer()..' seconds\n*FullCharge: '..stratsRecast..' seconds')
 			time_box:visible(true)
@@ -72,11 +72,11 @@ end)
 
 windower.register_event('incoming chunk',function(id,org,modi,is_injected,is_blocked)
     if enabled then
-		if is_injected then return end
-		if id == 0x63 and org:byte(5) == 5 then
-			local offset = windower.ffxi.get_player().main_job_id*6+13 -- So WAR (ID==1) starts at byte 19
-			totaljp = org:unpack('H',offset+4)
-		end
+	end
+	if is_injected then return end
+	if (id == 0x63 or id == 0x08D) and org:byte(5) == 5 then
+		local offset = windower.ffxi.get_player().main_job_id*6+13 -- So WAR (ID==1) starts at byte 19
+		totaljp = org:unpack('H',offset+4)
 	end
 end)
 
