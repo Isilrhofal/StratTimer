@@ -26,7 +26,7 @@
 
 _addon.author = 'Vanyar'
 _addon.name = 'StratTimer'
-_addon.version = '0.1'
+_addon.version = '0.2'
 
 config = require('config')
 texts = require('texts')
@@ -43,18 +43,40 @@ defaults.text.size = 12
 
 settings = config.load(defaults)
 time_box = texts.new(settings)
+local enabled = false
+local schbuff = 'None'
+
+windower.register_event('prerender', function()
+	player = windower.ffxi.get_player()
+	if player then
+		if S{player.main_job, player.sub_job}:contains('SCH') then
+			local strats = get_current_strategem_count()
+			local allRecasts = windower.ffxi.get_ability_recasts()
+			local stratsRecast = allRecasts[231]
+			local col = '\\cs(0,255,0)'
+			if (strats == 0) then
+				col = '\\cs(255,0,0)'
+			elseif (strats <= 3) and player.main_job == 'SCH' then
+				col = '\\cs(255,125,125)'
+			end
+			time_box:text('SCH: '..schbuff..'\n*Remaining:  '..col..strats..' charges\\cr\n*Recast:     '..recast_timer()..' seconds\n*FullCharge: '..stratsRecast..' seconds')
+			time_box:visible(true)
+		else
+			time_box:text('')
+			time_box:hide()
+		end
+	else
+		time_box:hide()
+	end
+end)
 
 windower.register_event('incoming chunk',function(id,org,modi,is_injected,is_blocked)
-    if is_injected then return end
-	if id == 0x63 and org:byte(5) == 5 then
-		local offset = windower.ffxi.get_player().main_job_id*6+13 -- So WAR (ID==1) starts at byte 19
-		totaljp = org:unpack('H',offset+4)
-	end
-	
-	if windower.ffxi.get_player().main_job == 'SCH' or windower.ffxi.get_player().sub_job == 'SCH' then
-		time_box:visible(true)
-	else
-        time_box:visible(false)
+    if enabled then
+		if is_injected then return end
+		if id == 0x63 and org:byte(5) == 5 then
+			local offset = windower.ffxi.get_player().main_job_id*6+13 -- So WAR (ID==1) starts at byte 19
+			totaljp = org:unpack('H',offset+4)
+		end
 	end
 end)
 
@@ -110,7 +132,6 @@ function get_current_strategem_count()
 		local strattimer = '33'
 	end
 	local fullRechargeTime = math.floor(maxStrategems * strattimer)
-	--print (fullRechargeTime)
 	local currentCharges = math.floor(maxStrategems - maxStrategems * stratsRecast / fullRechargeTime)
 	return currentCharges
 end
@@ -135,33 +156,12 @@ function recast_timer()
 	return timer
 end
 
-schbuff = 'None'
 
---[[ Hmm,... not sure if I want to do that.
-windower.register_event('lose buff', function(identify)
-    local arts = S{'Dark Arts','Light Arts','Abbendum: Black','Abbendum: White'}
-	local name = res.buffs[identify].english
-    if arts:contains(name) then
-		schbuff = 'None'
-	end
-end)
-]]--
 
 windower.register_event('gain buff', function(identify)
 	local arts = S{'Dark Arts','Light Arts','Abbendum: Black','Abbendum: White'}
 	local name = res.buffs[identify].english
 	if arts:contains(name) then
 		schbuff = name
-	end
-end)
-
-windower.register_event('prerender', function()
-	-- Add colors for the different amount of strats left if possible, red 0, orange less then 2(Main job onry), 3-4 green, 5 dark green
-	if windower.ffxi.get_player().main_job == 'SCH' or windower.ffxi.get_player().sub_job == 'SCH' then
-		local allRecasts = windower.ffxi.get_ability_recasts()
-		local stratsRecast = allRecasts[231]
-		time_box:text('SCH: '..schbuff..'\n*Remaining:  '..get_current_strategem_count()..' charges\n*Recast:     '..recast_timer()..' seconds\n*FullCharge: '..stratsRecast..' seconds')
-	else
-		time_box:text('')
 	end
 end)
