@@ -70,22 +70,25 @@ windower.register_event('prerender', function()
 	end
 end)
 
+
+--[[
 windower.register_event('incoming chunk',function(id,org,modi,is_injected,is_blocked)
-    if enabled then
-	end
 	if is_injected then return end
 	if (id == 0x63 or id == 0x08D) and org:byte(5) == 5 then
-		local offset = windower.ffxi.get_player().main_job_id*6+13 -- So WAR (ID==1) starts at byte 19
+		local offset = windower.ffxi.get_player().main_job_id*6+13
 		totaljp = org:unpack('H',offset+4)
 	end
+	-- this can be replaced by: player.job_points.sch.jp_spent
 end)
+]]--
 
 
-
-function usersetup()
+function usersetup(org)
 	local sub_job = windower.ffxi.get_player().sub_job
 	local main_job = windower.ffxi.get_player().main_job
+
 	if main_job == 'SCH' then
+		local totaljp = player.job_points.sch.jp_spent
 		local main_job_level = windower.ffxi.get_player().main_job_level
 		if main_job_level >= 10 and main_job_level <= 29 then
 			strattimer = '240'
@@ -114,6 +117,7 @@ function usersetup()
 		end
 		return strattimer
 	end
+
 end
 
 function get_current_strategem_count()
@@ -159,7 +163,7 @@ end
 
 
 windower.register_event('gain buff', function(identify)
-	local arts = S{'Dark Arts','Light Arts','Abbendum: Black','Abbendum: White'}
+	local arts = S{'Dark Arts','Light Arts','Addendum: Black','Addendum: White'}
 	local name = res.buffs[identify].english
 	if arts:contains(name) then
 		schbuff = name
